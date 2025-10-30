@@ -8,51 +8,67 @@
     body { font-family: system-ui, sans-serif; margin: 2rem; }
     h1 { color: #2a7ae2; }
     button { font-size: 1rem; padding: 0.5rem 1rem; margin-top: 1rem; }
-    p { margin-top: 1rem; }
+    pre { background: #f4f4f4; padding: 1rem; margin-top: 1rem; }
   </style>
 </head>
 <body>
   <h1>PointerOverflow CTF Flag Fetcher</h1>
 
   <button id="loginBtn">Login</button>
-  <button id="flagBtn" disabled>Go to Flag</button>
+  <button id="flagBtn" disabled>Fetch Flag</button>
 
-  <p id="status"></p>
+  <pre id="output"></pre>
 
   <script>
     const loginBtn = document.getElementById('loginBtn');
     const flagBtn = document.getElementById('flagBtn');
-    const statusEl = document.getElementById('status');
+    const output = document.getElementById('output');
 
     const log = (msg) => {
       console.log(msg);
-      statusEl.textContent = msg;
+      output.textContent += msg + "\n";
     };
 
     loginBtn.onclick = async () => {
       loginBtn.disabled = true;
       log("Logging in...");
 
-      // 1️⃣ Login to create session cookie
       const loginRes = await fetch('https://web200-1.pointeroverflowctf.com/login', {
         method: 'POST',
         credentials: 'include'
       });
 
-      if (!loginRes.ok) {
-        log("Login failed!");
-        loginBtn.disabled = false;
-        return;
-      }
+      const loginData = await loginRes.json();
+      log(`Login: ${loginRes.status} ${JSON.stringify(loginData)}`);
 
-      log("Login successful! Session cookie is set.");
-      // Enable the button to fetch the flag
-      flagBtn.disabled = false;
+      if (loginData.ok) {
+        flagBtn.disabled = false;
+        log("Session cookie set. You can now fetch the flag.");
+      } else {
+        loginBtn.disabled = false;
+        log("Login failed.");
+      }
     };
 
-    flagBtn.onclick = () => {
-      log("Redirecting to /api/flag...");
-      window.location.href = 'https://web200-1.pointeroverflowctf.com/api/flag';
+    flagBtn.onclick = async () => {
+      log("Fetching token...");
+
+      // Get the API token
+      const tokenRes = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
+        credentials: 'include'
+      });
+      const tokenData = await tokenRes.json();
+      const token = tokenData.apiToken;
+      log(`Token: ${token}`);
+
+      // Fetch the flag using the token
+      log("Fetching flag...");
+      const flagRes = await fetch('https://web200-1.pointeroverflowctf.com/api/flag', {
+        headers: { 'X-Flag-Token': token },
+        credentials: 'include'
+      });
+      const flagText = await flagRes.text();
+      log(`Flag: ${flagText}`);
     };
   </script>
 </body>
