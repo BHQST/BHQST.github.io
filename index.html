@@ -2,39 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PointerOverflow CTF Flag Fetcher</title>
+  <title>PointerOverflow CTF - Fetch Flag</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
     h1 { color: #2a7ae2; }
-    p { font-size: 1.1rem; }
+    button { font-size: 1rem; padding: 0.5rem 1rem; margin-top: 1rem; }
+    p { margin-top: 1rem; }
   </style>
 </head>
 <body>
-  <h1>Fetching your flag...</h1>
-  <p>If this page doesn’t redirect automatically, <a id="flagLink" href="#">click here</a>.</p>
+  <h1>PointerOverflow CTF Flag Fetcher</h1>
+  <p>Click the button below to log in and view your flag:</p>
+  <button id="fetchFlag">Fetch Flag</button>
+  <p id="status"></p>
 
   <script>
-    (async () => {
-      const log = msg => console.log(msg);
+    const statusEl = document.getElementById('status');
+    const button = document.getElementById('fetchFlag');
 
-      log("Starting login...");
+    const log = (msg) => {
+      console.log(msg);
+      statusEl.textContent = msg;
+    };
 
-      // 1️⃣ Login to create a session cookie
-      await fetch('https://web200-1.pointeroverflowctf.com/login', {
+    button.onclick = async () => {
+      button.disabled = true;
+      log("Logging in...");
+
+      // 1️⃣ Login to create session cookie
+      const loginRes = await fetch('https://web200-1.pointeroverflowctf.com/login', {
         method: 'POST',
         credentials: 'include'
       });
 
-      log("Login complete. Redirecting to /api/flag...");
+      if (!loginRes.ok) {
+        log("Login failed!");
+        button.disabled = false;
+        return;
+      }
 
-      // 2️⃣ Redirect the browser to /api/flag
+      log("Login successful! Waiting for session to settle...");
+
+      // 2️⃣ Wait a short delay to ensure cookie is fully set
+      await new Promise(r => setTimeout(r, 500));
+
+      // 3️⃣ Redirect the browser to /api/flag (trusted origin)
+      log("Redirecting to /api/flag to fetch your flag...");
       window.location.href = 'https://web200-1.pointeroverflowctf.com/api/flag';
-
-      // 3️⃣ Fallback link in case auto-redirect fails
-      const a = document.getElementById('flagLink');
-      a.href = 'https://web200-1.pointeroverflowctf.com/api/flag';
-    })();
+    };
   </script>
 </body>
 </html>
