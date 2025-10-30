@@ -2,83 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PointerOverflow CTF - Fetch Flag</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PO CTF Flag Fetcher</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 2rem; }
-    h1 { color: #2a7ae2; }
-    button { font-size: 1rem; padding: 0.5rem 1rem; margin-top: 1rem; }
-    p { margin-top: 1rem; }
-    a { display: block; margin-top: 1rem; font-weight: bold; color: green; }
+    body { font-family: system-ui; margin: 2rem; }
+    button { margin: 0.5rem; }
+    pre { background:#eee; padding:1rem; }
   </style>
 </head>
 <body>
-  <h1>PointerOverflow CTF Flag Fetcher</h1>
-
+  <h1>PointerOverflow CTF</h1>
   <button id="loginBtn">Login</button>
-  <button id="tokenBtn" disabled>Get API Token</button>
-  <a id="flagLink" href="#" target="_blank" style="display:none;">Go to Flag</a>
+  <button id="tokenBtn" disabled>Get Token</button>
+  <button id="flagBtn" disabled>Get Flag</button>
+  <pre id="output"></pre>
 
-  <p id="status"></p>
+<script>
+const loginBtn = document.getElementById('loginBtn');
+const tokenBtn = document.getElementById('tokenBtn');
+const flagBtn = document.getElementById('flagBtn');
+const output = document.getElementById('output');
 
-  <script>
-    const loginBtn = document.getElementById('loginBtn');
-    const tokenBtn = document.getElementById('tokenBtn');
-    const flagLink = document.getElementById('flagLink');
-    const statusEl = document.getElementById('status');
+let apiToken = null;
 
-    const log = (msg) => {
-      console.log(msg);
-      statusEl.textContent = msg;
-    };
+const log = msg => output.textContent += msg + '\n';
 
-    loginBtn.onclick = async () => {
-      loginBtn.disabled = true;
-      log("Logging in...");
+loginBtn.onclick = async () => {
+  log('Logging in...');
+  const res = await fetch('https://web200-1.pointeroverflowctf.com/login', {
+    method: 'POST',
+    credentials: 'include'
+  });
+  const data = await res.json();
+  log(`Login: ${res.status} ${JSON.stringify(data)}`);
+  if(data.ok) {
+    log('Session cookie set. You can now fetch token.');
+    tokenBtn.disabled = false;
+  }
+};
 
-      const loginRes = await fetch('https://web200-1.pointeroverflowctf.com/login', {
-        method: 'POST',
-        credentials: 'include'
-      });
+tokenBtn.onclick = async () => {
+  log('Fetching token...');
+  const res = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
+    credentials: 'include'
+  });
+  const data = await res.json();
+  apiToken = data.apiToken;
+  log(`Token: ${apiToken}`);
+  flagBtn.disabled = false;
+};
 
-      if (!loginRes.ok) {
-        log("Login failed!");
-        loginBtn.disabled = false;
-        return;
-      }
-
-      const loginData = await loginRes.json();
-      if (loginData.ok) {
-        log("Login successful. Session cookie set.");
-        tokenBtn.disabled = false;
-      } else {
-        log("Login failed: " + JSON.stringify(loginData));
-        loginBtn.disabled = false;
-      }
-    };
-
-    tokenBtn.onclick = async () => {
-      tokenBtn.disabled = true;
-      log("Fetching API token...");
-
-      const tokenRes = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
-        credentials: 'include'
-      });
-
-      if (!tokenRes.ok) {
-        log("Token fetch failed!");
-        tokenBtn.disabled = false;
-        return;
-      }
-
-      const tokenData = await tokenRes.json();
-      log("Token: " + tokenData.apiToken);
-
-      // Show clickable link to /api/flag
-      flagLink.href = 'https://web200-1.pointeroverflowctf.com/api/flag';
-      flagLink.style.display = 'inline';
-      flagLink.textContent = "Click here to fetch the FLAG!";
-    };
-  </script>
+flagBtn.onclick = async () => {
+  if(!apiToken) { log('No token!'); return; }
+  log('Fetching flag...');
+  const res = await fetch('https://web200-1.pointeroverflowctf.com/api/flag', {
+    method: 'GET',
+    headers: { 'X-Flag-Token': apiToken },
+    credentials: 'include'
+  });
+  if(res.ok) {
+    const text = await res.text();
+    log('Flag: ' + text);
+  } else {
+    log(`Flag fetch failed: ${res.status}`);
+  }
+};
+</script>
 </body>
 </html>
