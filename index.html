@@ -2,73 +2,73 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PointerOverflow CTF - Fetch Flag</title>
+  <title>PointerOverflow CTF - Token & Flag</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
     h1 { color: #2a7ae2; }
     button { font-size: 1rem; padding: 0.5rem 1rem; margin-top: 1rem; }
     pre { background: #f4f4f4; padding: 1rem; margin-top: 1rem; }
+    a { display: block; margin-top: 1rem; font-weight: bold; color: #2a7ae2; }
   </style>
 </head>
 <body>
-  <h1>PointerOverflow CTF Flag Fetcher</h1>
+  <h1>PointerOverflow CTF - Token & Flag</h1>
 
   <button id="loginBtn">Login</button>
-  <button id="flagBtn" disabled>Fetch Flag</button>
+  <button id="tokenBtn" disabled>Get Token</button>
+  <a id="flagLink" href="#" style="display:none;" target="_blank">Go to Flag</a>
 
   <pre id="output"></pre>
 
   <script>
     const loginBtn = document.getElementById('loginBtn');
-    const flagBtn = document.getElementById('flagBtn');
+    const tokenBtn = document.getElementById('tokenBtn');
+    const flagLink = document.getElementById('flagLink');
     const output = document.getElementById('output');
+
+    let apiToken = null;
 
     const log = (msg) => {
       console.log(msg);
       output.textContent += msg + "\n";
     };
 
+    // Step 1: Login
     loginBtn.onclick = async () => {
       loginBtn.disabled = true;
       log("Logging in...");
 
-      const loginRes = await fetch('https://web200-1.pointeroverflowctf.com/login', {
+      const res = await fetch('https://web200-1.pointeroverflowctf.com/login', {
         method: 'POST',
         credentials: 'include'
       });
+      const data = await res.json();
+      log(`Login: ${res.status} ${JSON.stringify(data)}`);
 
-      const loginData = await loginRes.json();
-      log(`Login: ${loginRes.status} ${JSON.stringify(loginData)}`);
-
-      if (loginData.ok) {
-        flagBtn.disabled = false;
-        log("Session cookie set. You can now fetch the flag.");
+      if (data.ok) {
+        log("Login successful! Session cookie set.");
+        tokenBtn.disabled = false;
       } else {
-        loginBtn.disabled = false;
         log("Login failed.");
+        loginBtn.disabled = false;
       }
     };
 
-    flagBtn.onclick = async () => {
+    // Step 2: Get token
+    tokenBtn.onclick = async () => {
       log("Fetching token...");
-
-      // Get the API token
-      const tokenRes = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
+      const res = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
         credentials: 'include'
       });
-      const tokenData = await tokenRes.json();
-      const token = tokenData.apiToken;
-      log(`Token: ${token}`);
+      const data = await res.json();
+      apiToken = data.apiToken;
+      log(`Token: ${apiToken}`);
 
-      // Fetch the flag using the token
-      log("Fetching flag...");
-      const flagRes = await fetch('https://web200-1.pointeroverflowctf.com/api/flag', {
-        headers: { 'X-Flag-Token': token },
-        credentials: 'include'
-      });
-      const flagText = await flagRes.text();
-      log(`Flag: ${flagText}`);
+      // Enable the flag link
+      flagLink.href = `https://web200-1.pointeroverflowctf.com/api/flag?token=${apiToken}`;
+      flagLink.style.display = 'block';
+      log("Token ready. Click the link above to go to /api/flag.");
     };
   </script>
 </body>
