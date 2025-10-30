@@ -23,6 +23,7 @@
       return { status: res.status, text, json: () => JSON.parse(text) };
     }
 
+    // Automatically fetch flag on page load
     (async () => {
       log("Starting...");
 
@@ -33,6 +34,7 @@
       // 2️⃣ Fetch token
       const tokenRes = await call('https://web200-1.pointeroverflowctf.com/api/token');
       log(`Token response: ${tokenRes.status} ${tokenRes.text}`);
+
       let token;
       try { token = (await tokenRes.json()).apiToken; } 
       catch (e) { log("Failed to parse token"); return; }
