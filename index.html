@@ -2,33 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PointerOverflow CTF - Token Capture</title>
+  <title>PointerOverflow CTF - Fetch Flag</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
-    button { margin: 0.5rem 0; padding: 0.5rem 1rem; }
-    pre { background: #f0f0f0; padding: 1rem; }
+    h1 { color: #2a7ae2; }
+    button { font-size: 1rem; padding: 0.5rem 1rem; margin-top: 1rem; }
+    p { margin-top: 1rem; }
+    a { display: block; margin-top: 1rem; font-weight: bold; color: green; }
   </style>
 </head>
 <body>
-  <h1>PointerOverflow CTF</h1>
+  <h1>PointerOverflow CTF Flag Fetcher</h1>
 
   <button id="loginBtn">Login</button>
-  <button id="tokenBtn" disabled>Fetch Token</button>
-  <p>After fetching the token, click the link below to open the flag in a new tab.</p>
-  <a id="flagLink" href="https://web200-1.pointeroverflowctf.com/api/flag" target="_blank" style="display:none">Go to Flag</a>
+  <button id="tokenBtn" disabled>Get API Token</button>
+  <a id="flagLink" href="#" target="_blank" style="display:none;">Go to Flag</a>
 
-  <pre id="output"></pre>
+  <p id="status"></p>
 
   <script>
     const loginBtn = document.getElementById('loginBtn');
     const tokenBtn = document.getElementById('tokenBtn');
     const flagLink = document.getElementById('flagLink');
-    const output = document.getElementById('output');
+    const statusEl = document.getElementById('status');
 
-    const log = msg => {
+    const log = (msg) => {
       console.log(msg);
-      output.textContent += msg + "\n";
+      statusEl.textContent = msg;
     };
 
     loginBtn.onclick = async () => {
@@ -40,32 +41,43 @@
         credentials: 'include'
       });
 
-      const loginData = await loginRes.json();
-      log("Login: " + JSON.stringify(loginData));
+      if (!loginRes.ok) {
+        log("Login failed!");
+        loginBtn.disabled = false;
+        return;
+      }
 
+      const loginData = await loginRes.json();
       if (loginData.ok) {
-        log("Session cookie set. You can now fetch the token.");
+        log("Login successful. Session cookie set.");
         tokenBtn.disabled = false;
       } else {
-        log("Login failed.");
+        log("Login failed: " + JSON.stringify(loginData));
         loginBtn.disabled = false;
       }
     };
 
     tokenBtn.onclick = async () => {
       tokenBtn.disabled = true;
-      log("Fetching token...");
+      log("Fetching API token...");
 
       const tokenRes = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
-        method: 'GET',
         credentials: 'include'
       });
+
+      if (!tokenRes.ok) {
+        log("Token fetch failed!");
+        tokenBtn.disabled = false;
+        return;
+      }
 
       const tokenData = await tokenRes.json();
       log("Token: " + tokenData.apiToken);
 
-      log("Token retrieved. Click the link below to open /api/flag in a new tab.");
+      // Show clickable link to /api/flag
+      flagLink.href = 'https://web200-1.pointeroverflowctf.com/api/flag';
       flagLink.style.display = 'inline';
+      flagLink.textContent = "Click here to fetch the FLAG!";
     };
   </script>
 </body>
