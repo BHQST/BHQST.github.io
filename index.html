@@ -13,21 +13,24 @@
 </head>
 <body>
   <h1>PointerOverflow CTF Flag Fetcher</h1>
-  <p>Click the button below to log in and view your flag:</p>
-  <button id="fetchFlag">Fetch Flag</button>
+
+  <button id="loginBtn">Login</button>
+  <button id="flagBtn" disabled>Go to Flag</button>
+
   <p id="status"></p>
 
   <script>
+    const loginBtn = document.getElementById('loginBtn');
+    const flagBtn = document.getElementById('flagBtn');
     const statusEl = document.getElementById('status');
-    const button = document.getElementById('fetchFlag');
 
     const log = (msg) => {
       console.log(msg);
       statusEl.textContent = msg;
     };
 
-    button.onclick = async () => {
-      button.disabled = true;
+    loginBtn.onclick = async () => {
+      loginBtn.disabled = true;
       log("Logging in...");
 
       // 1️⃣ Login to create session cookie
@@ -38,17 +41,17 @@
 
       if (!loginRes.ok) {
         log("Login failed!");
-        button.disabled = false;
+        loginBtn.disabled = false;
         return;
       }
 
-      log("Login successful! Waiting for session to settle...");
+      log("Login successful! Session cookie is set.");
+      // Enable the button to fetch the flag
+      flagBtn.disabled = false;
+    };
 
-      // 2️⃣ Wait a short delay to ensure cookie is fully set
-      await new Promise(r => setTimeout(r, 500));
-
-      // 3️⃣ Redirect the browser to /api/flag (trusted origin)
-      log("Redirecting to /api/flag to fetch your flag...");
+    flagBtn.onclick = () => {
+      log("Redirecting to /api/flag...");
       window.location.href = 'https://web200-1.pointeroverflowctf.com/api/flag';
     };
   </script>
