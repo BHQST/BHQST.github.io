@@ -22,7 +22,7 @@
     async function call(path, init) {
       const res = await fetch(path, Object.assign({ credentials: 'include' }, init || {}));
       const text = await res.text();
-      return { status: res.status, text, json: () => JSON.parse(text) };
+      return { status: res.status, text, json: async () => JSON.parse(text) };
     }
 
     async function run() {
@@ -35,10 +35,11 @@
       // 2️⃣ Get session token
       const tokenRes = await call('https://web200-1.pointeroverflowctf.com/api/token');
       log(`Token response: ${tokenRes.status} ${tokenRes.text}`);
-      
+
       let token;
       try {
-        token = tokenRes.json().token; // assuming API returns { "token": "..." }
+        const tokenJson = await tokenRes.json(); // ✅ await JSON
+        token = tokenJson.apiToken;             // ✅ correct property
       } catch {
         log("Failed to parse token. Check login first.");
         return;
@@ -61,3 +62,4 @@
   </script>
 </body>
 </html>
+
