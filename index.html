@@ -6,10 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
+    h1 { color: #2a7ae2; }
+    p { font-size: 1.1rem; }
   </style>
 </head>
 <body>
-  <h1>Fetching Flag...</h1>
+  <h1>Fetching your flag...</h1>
   <p>If this page doesn’t redirect automatically, <a id="flagLink" href="#">click here</a>.</p>
 
   <script>
@@ -18,13 +20,13 @@
 
       log("Starting login...");
 
-      // 1️⃣ Login to create a session
+      // 1️⃣ Login to create a session cookie
       await fetch('https://web200-1.pointeroverflowctf.com/login', {
         method: 'POST',
         credentials: 'include'
       });
 
-      log("Login complete. Redirecting to flag...");
+      log("Login complete. Redirecting to /api/flag...");
 
       // 2️⃣ Redirect the browser to /api/flag
       window.location.href = 'https://web200-1.pointeroverflowctf.com/api/flag';
